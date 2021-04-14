@@ -8,6 +8,7 @@ contract AliumFactory is IAliumFactory {
 
     address public feeTo;
     address public feeToSetter;
+    bool public feeToImplDelivery;
 
     mapping(address => mapping(address => address)) public getPair;
     address[] public allPairs;
@@ -42,6 +43,12 @@ contract AliumFactory is IAliumFactory {
     function setFeeTo(address _feeTo) external {
         require(msg.sender == feeToSetter, 'Alium: FORBIDDEN');
         feeTo = _feeTo;
+    }
+
+    function setFeeToWithDelivery(address _feeTo) external {
+        require(msg.sender == feeToSetter, 'Alium: FORBIDDEN');
+        feeTo = _feeTo;
+        feeToImplDelivery = true;
     }
 
     function setFeeToSetter(address _feeToSetter) external {

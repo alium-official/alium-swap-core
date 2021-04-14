@@ -4,6 +4,7 @@ interface IAliumFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
     function feeTo() external view returns (address);
+    function feeToImplDelivery() external view returns (bool);
     function feeToSetter() external view returns (address);
 
     function getPair(address tokenA, address tokenB) external view returns (address pair);
@@ -13,5 +14,6 @@ interface IAliumFactory {
     function createPair(address tokenA, address tokenB) external returns (address pair);
 
     function setFeeTo(address) external;
+    function setFeeToWithDelivery(address) external;
     function setFeeToSetter(address) external;
 }

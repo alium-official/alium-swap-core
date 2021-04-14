@@ -68,15 +68,15 @@ describe('AliumPair', () => {
     await pair.mint(wallet.address, overrides)
   }
   const swapTestCases: BigNumber[][] = [
-    [1, 5, 10, '1663192997082117548'],
-    [1, 10, 5, '453512161854967037'],
+    [1, 5, 10, '1663887962654218072'],
+    [1, 10, 5, '453718857974177123'],
 
-    [2, 5, 10, '2852037169406719085'],
-    [2, 10, 5, '831596498541058774'],
+    [2, 5, 10, '2853058890794739851'],
+    [2, 10, 5, '831943981327109036'],
 
-    [1, 10, 10, '907024323709934075'],
-    [1, 100, 100, '987648209114086982'],
-    [1, 1000, 1000, '996505985279683515']
+    [1, 10, 10, '907437715948354246'],
+    [1, 100, 100, '988138378977801540'],
+    [1, 1000, 1000, '997004989020957084']
   ].map(a => a.map(n => (typeof n === 'string' ? bigNumberify(n) : expandTo18Decimals(n))))
   swapTestCases.forEach((swapTestCase, i) => {
     it(`getInputPrice:${i}`, async () => {
@@ -91,10 +91,10 @@ describe('AliumPair', () => {
   })
 
   const optimisticTestCases: BigNumber[][] = [
-    ['997500000000000000', 5, 10, 1], // given amountIn, amountOut = floor(amountIn * .9975)
-    ['997500000000000000', 10, 5, 1],
-    ['997500000000000000', 5, 5, 1],
-    [1, 5, 5, '1002506265664160402'] // given amountOut, amountIn = ceiling(amountOut / .9975)
+    ['998000000000000000', 5, 10, 1], // given amountIn, amountOut = floor(amountIn * .998)
+    ['998000000000000000', 10, 5, 1],
+    ['998000000000000000', 5, 5, 1],
+    [1, 5, 5, '1002004008016032065'] // given amountOut, amountIn = ceiling(amountOut / .998)
   ].map(a => a.map(n => (typeof n === 'string' ? bigNumberify(n) : expandTo18Decimals(n))))
   optimisticTestCases.forEach((optimisticTestCase, i) => {
     it(`optimistic:${i}`, async () => {
@@ -256,9 +256,8 @@ describe('AliumPair', () => {
     expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY)
   })
 
-  it.only('feeTo:on', async () => {
-    let feeRecipient = '0x0000000000000000000000000000000000000FEE'
-    await factory.setFeeTo(feeRecipient)
+  it('feeTo:on', async () => {
+    await factory.setFeeTo(other.address)
 
     const token0Amount = expandTo18Decimals(1000)
     const token1Amount = expandTo18Decimals(1000)
@@ -271,78 +270,13 @@ describe('AliumPair', () => {
 
     const expectedLiquidity = expandTo18Decimals(1000)
     await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-    let burnRes = await pair.burn(wallet.address, overrides)
-    let resultEvents = (await burnRes.wait()).events;
-    // console.log((await burnRes.wait()).events)
-
-    const result = resultEvents.filter((items: {
-        args: any
-        event: string
-      }) => {
-        if (items.event === "Amounts") {
-          // console.log(`amount0: ${items.args[0].toString()}`)
-          // console.log(`amount1: ${items.args[1].toString()}`)
-          // console.log(`balance0: ${items.args[2].toString()}`)
-          // console.log(`balance1: ${items.args[3].toString()}`)
-          // console.log(`\n`)
-          return true;
-        }
-        return false;
-    });
-
-    resultEvents.filter((items: {
-      args: any
-      event: string
-    }) => {
-      if (
-        items.event === "Transfer" &&
-        items.args[0].toString() !== '0x0000000000000000000000000000000000000000' &&
-        items.args[1].toString() !== '0x0000000000000000000000000000000000000000'
-      ) {
-        console.log(`from: ${items.args[0].toString()}`)
-        console.log(`to: ${items.args[1].toString()}`)
-        console.log(`value: ${items.args[2].toString()}`)
-        console.log(`\n`)
-        return true;
-      }
-      return false;
-    });
-
-    resultEvents.filter((items: {
-      args: any
-      event: string
-    }) => {
-      if (items.event === "MintFee") {
-        console.log(`to: ${items.args[0].toString()}`)
-        console.log(`value: ${items.args[1].toString()}`)
-        console.log(`\n`)
-        return true;
-      }
-      return false;
-    });
-
-    // console.log(result)
-    // process.exit(123)
-    // await expect(pair.burn(wallet.address, overrides))
-    //   .to.emit(pair, 'Transfer')
-    //   .withArgs(pair.address, AddressZero, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-    //   .to.emit(token0, 'Transfer')
-    //   .withArgs(pair.address, wallet.address, token0Amount.sub(1000))
-    //   .to.emit(token1, 'Transfer')
-    //   .withArgs(pair.address, wallet.address, token1Amount.sub(1000))
-    //   .to.emit(pair, 'Sync')
-    //   .withArgs(1000, 1000)
-    //   .to.emit(pair, 'Burn')
-    //   .withArgs(wallet.address, token0Amount.sub(1000), token1Amount.sub(1000), wallet.address)
-
-
-    // owners fee already sent to owner
-    expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY/* .add('374625795658571') */)
-    // expect(await pair.balanceOf(other.address)).to.eq('374625795658571') // owner has no LP, it has fee in natural tokens 
+    await pair.burn(wallet.address, overrides)
+    expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY.add('374625795658571'))
+    expect(await pair.balanceOf(other.address)).to.eq('374625795658571')
 
     // using 1000 here instead of the symbolic MINIMUM_LIQUIDITY because the amounts only happen to be equal...
     // ...because the initial liquidity amounts were equal
-    /* expect(await token0.balanceOf(pair.address)).to.eq(bigNumberify(1000).add('374252525546167'))
-    expect(await token1.balanceOf(pair.address)).to.eq(bigNumberify(1000).add('375000280969452')) */
+    expect(await token0.balanceOf(pair.address)).to.eq(bigNumberify(1000).add('374252525546167'))
+    expect(await token1.balanceOf(pair.address)).to.eq(bigNumberify(1000).add('375000280969452'))
   })
 })
